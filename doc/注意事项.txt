@@ -1,0 +1,1 @@
+1. filter 用了 opencv4，请注意把 opencv4 的install 路径，我是直接放到 mingw32 目录下了，比较粗暴
