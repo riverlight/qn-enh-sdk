@@ -2,26 +2,10 @@
 #include <opencv2/imgproc/imgproc.hpp>
 
 #include "../include/qnfilter-sdk.h"
+#include "qnfilter.h"
 
 using namespace cv;
 
-class CQNFilter
-{
-public:
-	CQNFilter(QNFILTER_TYPE eType);
-	virtual ~CQNFilter() {}
-
-
-private:
-
-private:
-	QNFILTER_TYPE _eType;
-};
-
-CQNFilter::CQNFilter(QNFILTER_TYPE eType)
-{
-	_eType = eType;
-}
 
 int QNFilter_Create(Handle* pHandle, QNFILTER_TYPE eType)
 {
@@ -42,10 +26,8 @@ int QNFilter_Process_I420(Handle handle, unsigned char* pYuv420, int width, int 
 		return -1;
 	}
 	CQNFilter* pFilter = (CQNFilter*)handle;
-	Mat m;
-	//imshow("1", m);
-
-	return 0;
+	
+	return pFilter->Process_I420(pYuv420, width, height);
 }
 
 int QNFilter_Destroy(Handle handle)
@@ -57,4 +39,14 @@ int QNFilter_Destroy(Handle handle)
 
 	delete pFilter;
 	return 0;
+}
+
+int QNFilter_Setting(Handle handle, QNFilterSetting* pSetting)
+{
+	CQNFilter* pFilter = (CQNFilter*)handle;
+	if (!handle) {
+		return -1;
+	}
+
+	return pFilter->Setting(pSetting);
 }

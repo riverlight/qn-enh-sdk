@@ -14,6 +14,8 @@ typedef struct QNFilterContext {
 
 	const char* enh_type;
 	QNFILTER_TYPE e_enh_type;
+	double lowlight_w;
+	double dehaze_w;
 	Handle qnfilterHandle;
 	unsigned char* i420buffer;
 
@@ -119,14 +121,17 @@ static av_cold int config_output(AVFilterLink *outlink)
 	outlink->h = ctx->inputs[0]->h;
 	av_log(NULL, AV_LOG_DEBUG, "configure output, w h = (%d %d), format %d \n", outlink->w, outlink->h, outlink->format);
 
-	if (strcmp(qnCtx->enh_type, "lowlight_enh")==0)
+	if (strcmp(qnCtx->enh_type, "lowlight_enh") == 0)
 		qnCtx->e_enh_type = QF_LOWLIGHT;
-	else if (strcmp(qnCtx->enh_type, "deblock")==0)
+	else if (strcmp(qnCtx->enh_type, "deblock") == 0)
 		qnCtx->e_enh_type = QF_DEBLOCK;
+	else if (strcmp(qnCtx->enh_type, "dehaze") == 0)
+		qnCtx->e_enh_type = QF_DEHAZE;
 	else {
 		av_log(qnCtx, AV_LOG_ERROR, "enhtype error [%s] \n", qnCtx->enh_type);
 		return AVERROR(EINVAL);
 	}
+	av_log(NULL, AV_LOG_DEBUG, "enhtype : %d\n", qnCtx->e_enh_type);
 
 	qnCtx->qnfilterHandle = NULL;
 	if (QNFilter_Create(&qnCtx->qnfilterHandle, qnCtx->e_enh_type) != 0) {
@@ -181,7 +186,9 @@ static int query_formats(AVFilterContext* ctx)
 #define VE AV_OPT_FLAG_VIDEO_PARAM|AV_OPT_FLAG_FILTERING_PARAM
 
 static const AVOption qnfilter_options[] = {
-	{ "enhtype",         "enhance type: lowlight_enh, deblock",          OFFSET(enh_type), AV_OPT_TYPE_STRING, {.str = ""}, .flags = VE},
+	{ "enhtype",         "enhance type: lowlight_enh, deblock, dehaze",          OFFSET(enh_type), AV_OPT_TYPE_STRING, {.str = ""}, .flags = VE},
+	{ "lowlight_w",				 "w: float, [0.0, 1.0]",						 OFFSET(lowlight_w), AV_OPT_TYPE_FLOAT, {.dbl = 0.5}, 0.0f, 1.0f, VE  },
+	{ "dehaze_w",				 "w: float, [0.0, 1.0]",						 OFFSET(dehaze_w), AV_OPT_TYPE_FLOAT, {.dbl = 0.95}, 0.0f, 1.0f, VE  },
 	{ NULL }
 
 };// TODO: add something if needed

@@ -5,7 +5,7 @@ message ("$ENV{OPENCV4_ROOT} ")
 
 include_directories($ENV{OPENCV4_ROOT}/include include)
 
-set (LIB_SRC src/qnfilter-sdk.cpp)
+set (LIB_SRC src/qnfilter-sdk.cpp src/qnfilter.cpp)
 file(GLOB TEST_SRC test/*.c test/*.cpp)
 
 #Generate the static library from the sources
