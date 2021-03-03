@@ -9,19 +9,20 @@ using namespace std;
 
 #define LMin(x, y) ((x)<(y) ? (x) : (y))
 #define LMin_xyz(x, y, z) LMin((x), LMin((y), (z)))
+#define LMax(x, y) ((x)>(y) ? (x) : (y))
 
 CQNFilter::CQNFilter(QNFILTER_TYPE eType)
 {
 	_eType = eType;
 
 	// lowlight
-	_nLowLight_r = 3;
+	_nLowLight_r = 27;
 	_dLowLight_eps = 0.001;
 	_dLowLight_w = 0.5;
 	_dLowLight_maxV1 = 0.7;
 
 	// dehaze
-	_nDehaze_r = 3;
+	_nDehaze_r = 27;
 	_dDehaze_eps = 0.001;
 	_dDehaze_w = 0.95;
 	_dDehaze_maxV1 = 0.8;
@@ -146,7 +147,8 @@ void CQNFilter::dehaze_getV1(int& A, Mat& V1, Mat&m, int r, float eps, float w, 
 			imgDark.at<uchar>(i, j) = LMin_xyz(m.at<Vec3b>(i, j)[0], m.at<Vec3b>(i, j)[1], m.at<Vec3b>(i, j)[2]);
 
 	Mat p;
-	Mat element = getStructuringElement(MORPH_RECT, Size(r * 2 + 1, r * 2 + 1), Point(r, r));
+	int erode_r = 5;
+	Mat element = getStructuringElement(MORPH_RECT, Size(erode_r*2+1, erode_r*2+1), Point(erode_r, erode_r));
 	erode(imgDark, p, element);
 
 	guidedFilter_int(V1, imgDark, p, r, eps);
@@ -193,9 +195,12 @@ int CQNFilter::Filter_dehaze(Mat& m)
 	double A_64f = double(A) / 1.0;
 	for (int i = 0; i < m.rows; i++)
 		for (int j = 0; j < m.cols; j++) {
-			m.at<Vec3b>(i, j)[0] = (double(m.at<Vec3b>(i, j)[0] - V1.at<uchar>(i, j)) / (1.0 - double(V1.at<uchar>(i, j)) / A_64f));
-			m.at<Vec3b>(i, j)[1] = (double(m.at<Vec3b>(i, j)[1] - V1.at<uchar>(i, j)) / (1.0 - double(V1.at<uchar>(i, j)) / A_64f));
-			m.at<Vec3b>(i, j)[2] = (double(m.at<Vec3b>(i, j)[2] - V1.at<uchar>(i, j)) / (1.0 - double(V1.at<uchar>(i, j)) / A_64f));
+			int b = LMax(m.at<Vec3b>(i, j)[0] - V1.at<uchar>(i, j), 0);
+			int g = LMax(m.at<Vec3b>(i, j)[1] - V1.at<uchar>(i, j), 0);
+			int r = LMax(m.at<Vec3b>(i, j)[2] - V1.at<uchar>(i, j), 0);
+			m.at<Vec3b>(i, j)[0] = (double(b) / (1.0 - double(V1.at<uchar>(i, j)) / A_64f));
+			m.at<Vec3b>(i, j)[1] = (double(g) / (1.0 - double(V1.at<uchar>(i, j)) / A_64f));
+			m.at<Vec3b>(i, j)[2] = (double(r) / (1.0 - double(V1.at<uchar>(i, j)) / A_64f));
 		}
 
 #if 0
