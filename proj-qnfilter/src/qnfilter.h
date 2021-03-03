@@ -27,7 +27,7 @@ private:
 
 	void dehaze_getV1(int &A, Mat &V1_64f, Mat &m, int r, float eps, float w, float maxV1);
 	void image_convert(Mat& m);
-	void guidedFilter2(Mat& out, cv::Mat I, cv::Mat p, int r, double eps);
+	void guidedFilter_int(Mat& out, cv::Mat I, cv::Mat p, int r, double eps);
 
 private:
 	// lowlight param

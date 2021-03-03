@@ -101,100 +101,61 @@ void CQNFilter::image_convert(Mat& m)
 		}
 }
 
-/*****************
-* https://blog.csdn.net/wangyaninglm/article/details/44838545
-http://research.microsoft.com/en-us/um/people/kahe/eccv10/
-推酷上的一篇文章：
-http://www.tuicool.com/articles/Mv2iiu
-************************/
-void CQNFilter::guidedFilter2(Mat &out, cv::Mat I, cv::Mat p, int r, double eps)
+// guideFilter 整型实现
+void CQNFilter::guidedFilter_int(Mat& out, cv::Mat I, cv::Mat p, int r, double eps)
 {
-	/*
-	% GUIDEDFILTER   O(1) time implementation of guided filter.
-	%
-	%   - guidance image: I (should be a gray-scale/single channel image)
-	%   - filtering input image: p (should be a gray-scale/single channel image)
-	%   - local window radius: r
-	%   - regularization parameter: eps
-	*/
+	// I and P is CV_8UC1
+	Mat mean_I;
+	boxFilter(I, mean_I, CV_32SC1, Size(r, r));
 
-#if 0
-	cv::Mat _I;
-	I.convertTo(_I, CV_64FC1);
-	I = _I;
+	Mat mean_p;
+	boxFilter(p, mean_p, CV_32SC1, Size(r, r));
 
-	cv::Mat _p;
-	p.convertTo(_p, CV_64FC1);
-	p = _p;
-#endif 
+	Mat mean_Ip;
+	boxFilter(I.mul(p), mean_Ip, CV_32SC1, Size(r, r));
 
-	//[hei, wid] = size(I);
-	int hei = I.rows;
-	int wid = I.cols;
+	Mat cov_Ip = mean_Ip - mean_I.mul(mean_p);
 
-	//N = boxfilter(ones(hei, wid), r); % the size of each local patch; N=(2r+1)^2 except for boundary pixels.
-	cv::Mat N;
-	cv::boxFilter(cv::Mat::ones(hei, wid, I.type()), N, CV_64FC1, cv::Size(r, r));
+	Mat mean_II;
+	boxFilter(I.mul(I), mean_II, CV_32SC1, Size(r, r));
 
-	//mean_I = boxfilter(I, r) ./ N;
-	cv::Mat mean_I;
-	cv::boxFilter(I, mean_I, CV_64FC1, cv::Size(r, r));
+	Mat var_I = mean_II - mean_I.mul(mean_I);
 
-	//mean_p = boxfilter(p, r) ./ N;
-	cv::Mat mean_p;
-	cv::boxFilter(p, mean_p, CV_64FC1, cv::Size(r, r));
+	Mat a = cov_Ip / (var_I + 1);
+	Mat b = mean_p - a.mul(mean_I);
 
-	//mean_Ip = boxfilter(I.*p, r) ./ N;
-	cv::Mat mean_Ip;
-	cv::boxFilter(I.mul(p), mean_Ip, CV_64FC1, cv::Size(r, r));
+	Mat mean_a;
+	boxFilter(a, mean_a, CV_32SC1, Size(r, r));
 
-	//cov_Ip = mean_Ip - mean_I .* mean_p; % this is the covariance of (I, p) in each local patch.
-	cv::Mat cov_Ip = mean_Ip - mean_I.mul(mean_p);
+	Mat mean_b;
+	boxFilter(b, mean_b, CV_32SC1, Size(r, r));
 
-	//mean_II = boxfilter(I.*I, r) ./ N;
-	cv::Mat mean_II;
-	cv::boxFilter(I.mul(I), mean_II, CV_64FC1, cv::Size(r, r));
-
-	//var_I = mean_II - mean_I .* mean_I;
-	cv::Mat var_I = mean_II - mean_I.mul(mean_I);
-
-	//a = cov_Ip ./ (var_I + eps); % Eqn. (5) in the paper;	
-	cv::Mat a = cov_Ip / (var_I + eps);
-
-	//b = mean_p - a .* mean_I; % Eqn. (6) in the paper;
-	cv::Mat b = mean_p - a.mul(mean_I);
-
-	//mean_a = boxfilter(a, r) ./ N;
-	cv::Mat mean_a;
-	cv::boxFilter(a, mean_a, CV_64FC1, cv::Size(r, r));
-	mean_a = mean_a / N;
-
-	//mean_b = boxfilter(b, r) ./ N;
-	cv::Mat mean_b;
-	cv::boxFilter(b, mean_b, CV_64FC1, cv::Size(r, r));
-	mean_b = mean_b / N;
-
-	//q = mean_a .* I + mean_b; % Eqn. (8) in the paper;
-	//cv::Mat q = mean_a.mul(I) + mean_b;
-	out = mean_a.mul(I) + mean_b;
+	Mat I_32;
+	I.convertTo(I_32, CV_32SC1);
+	Mat out_32;
+	out_32 = mean_a.mul(I_32) + mean_b;
+	out_32.convertTo(out, CV_8UC1);
 }
 
-
-void CQNFilter::dehaze_getV1(int& A, Mat& V1_64f, Mat&m, int r, float eps, float w, float maxV1)
+void CQNFilter::dehaze_getV1(int& A, Mat& V1, Mat&m, int r, float eps, float w, float maxV1)
 {
 	// get dark-channel
-	Mat imgDark = Mat(V1_64f.size(), CV_8UC1);
+	Mat imgDark = Mat(V1.size(), CV_8UC1);
 	for ( int i=0; i<m.rows; i++ )
 		for (int j = 0; j < m.cols; j++)
 			imgDark.at<uchar>(i, j) = LMin_xyz(m.at<Vec3b>(i, j)[0], m.at<Vec3b>(i, j)[1], m.at<Vec3b>(i, j)[2]);
-	
-	Mat I_64f, p_64f;
-	imgDark.convertTo(I_64f, CV_64FC1, 1.0 / 255.0);
 
+	Mat p;
 	Mat element = getStructuringElement(MORPH_RECT, Size(r * 2 + 1, r * 2 + 1), Point(r, r));
-	erode(I_64f, p_64f, element);
+	erode(imgDark, p, element);
 
-	guidedFilter2(V1_64f, I_64f, p_64f, r, eps);
+	guidedFilter_int(V1, imgDark, p, r, eps);
+	
+	int maxV1_i = maxV1 * 255;
+	for (int i = 0; i < m.rows; i++)
+		for (int j = 0; j < m.cols; j++) {
+			V1.at<uchar>(i, j) = LMin(maxV1_i, V1.at<uchar>(i, j) * w);
+		}
 
 	// 计算 A
 	int histSize = 256;
@@ -221,37 +182,28 @@ void CQNFilter::dehaze_getV1(int& A, Mat& V1_64f, Mat&m, int r, float eps, float
 			if (imgDark.at<uchar>(i, j) >= lmax)
 				A = m_gray.at<uchar>(i, j) > A ? m_gray.at<uchar>(i, j) : A;
 		}
-
-	for (int i = 0; i < m.rows; i++)
-		for (int j = 0; j < m.cols; j++) {
-			V1_64f.at<double>(i, j) = LMin(maxV1, V1_64f.at<double>(i, j)*w);
-		}
 }
 
 int CQNFilter::Filter_dehaze(Mat& m)
 {
 	int A = 0;
-	Mat V1_64f = Mat(m.size(), CV_64FC1);
-	dehaze_getV1(A, V1_64f, m, _nLowLight_r, _dLowLight_eps, _dLowLight_w, _dLowLight_maxV1);
+	Mat V1 = Mat(m.size(), CV_8UC1);
+	dehaze_getV1(A, V1, m, _nLowLight_r, _dLowLight_eps, _dLowLight_w, _dLowLight_maxV1);
 
-	Mat m_64f;
-	m.convertTo(m_64f, CV_64FC3, 1.0 / 255.0);
-
-	double A_64f = double(A) / 255.0;
+	double A_64f = double(A) / 1.0;
 	for (int i = 0; i < m.rows; i++)
 		for (int j = 0; j < m.cols; j++) {
-			double b64, g64, r64;
-			b64 = ((m_64f.at<Vec3d>(i, j)[0] - V1_64f.at<double>(i, j)) / (1.0 - V1_64f.at<double>(i, j) / A_64f));
-			g64 = ((m_64f.at<Vec3d>(i, j)[1] - V1_64f.at<double>(i, j)) / (1.0 - V1_64f.at<double>(i, j) / A_64f));
-			r64 = ((m_64f.at<Vec3d>(i, j)[2] - V1_64f.at<double>(i, j)) / (1.0 - V1_64f.at<double>(i, j) / A_64f));
-			m.at<Vec3b>(i, j)[0] = 255 * b64;
-			m.at<Vec3b>(i, j)[1] = 255 * g64;
-			m.at<Vec3b>(i, j)[2] = 255 * r64;
+			m.at<Vec3b>(i, j)[0] = (double(m.at<Vec3b>(i, j)[0] - V1.at<uchar>(i, j)) / (1.0 - double(V1.at<uchar>(i, j)) / A_64f));
+			m.at<Vec3b>(i, j)[1] = (double(m.at<Vec3b>(i, j)[1] - V1.at<uchar>(i, j)) / (1.0 - double(V1.at<uchar>(i, j)) / A_64f));
+			m.at<Vec3b>(i, j)[2] = (double(m.at<Vec3b>(i, j)[2] - V1.at<uchar>(i, j)) / (1.0 - double(V1.at<uchar>(i, j)) / A_64f));
 		}
 
-//	imshow("m64", m_64f);
-//	imshow("m", m);
-//	waitKey(0);
+#if 0
+	imshow("m64", m_64f);
+	imshow("m", m);
+	waitKey(0);
+	exit(0);
+#endif 
 
 	return 0;
 }
