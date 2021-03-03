@@ -1,6 +1,8 @@
+#include <time.h>
 #include "libavutil/opt.h"
 #include "libavutil/imgutils.h"
 #include "libavutil/avassert.h"
+#include "libavutil/time.h"
 #include "avfilter.h"
 #include "formats.h"
 #include "internal.h"
@@ -66,25 +68,32 @@ static int I420buffer_2_avframe(unsigned char* buffer, AVFrame* out)
 static int do_filter(AVFilterContext* ctx, void* arg, int jobnr, int nb_jobs)
 {
 //	av_log(NULL, AV_LOG_WARNING, "### Leon's QN filter_frame: core function \n");
+	if (jobnr != 0)
+		return 0;
 
 	QNFilterContext* qnCtx = ctx->priv;
 	ThreadData* td = arg;
 	AVFrame* dst = td->out;
 	AVFrame* src = td->in;
 
+	//clock_t t1 = clock();
 	avframe_2_I420buffer(src, qnCtx->i420buffer);
 	QNFilter_Process_I420(qnCtx->qnfilterHandle, qnCtx->i420buffer, src->width, src->height);
 	I420buffer_2_avframe(qnCtx->i420buffer, dst);
+	//clock_t t2 = clock();
+	//int tt = t2 - t1;
+	//av_log(NULL, AV_LOG_INFO, "QNFILTER time : %d, %d %d\n", tt, jobnr, nb_jobs);
 
 	return 0;
 }
 
 static int filter_frame(AVFilterLink* link, AVFrame* in)
 {
-	av_log(NULL, AV_LOG_WARNING, "### Leon's QN filter_frame, link %x, frame %x \n", link, in);
+	//av_log(NULL, AV_LOG_WARNING, "### Leon's QN filter_frame, link %x, frame %x \n", link, in);
 	AVFilterContext* avctx = link->dst;
 	AVFilterLink* outlink = avctx->outputs[0];
 	AVFrame* out;
+	const int nb_threads = ff_filter_get_nb_threads(avctx);
 
 	//allocate a new buffer, data is null
 	out = ff_get_video_buffer(outlink, outlink->w, outlink->h);
@@ -102,7 +111,7 @@ static int filter_frame(AVFilterLink* link, AVFrame* in)
 	td.in = in;
 	td.out = out;
 	int res;
-	if (res = avctx->internal->execute(avctx, do_filter, &td, NULL, FFMIN(outlink->h, avctx->graph->nb_threads))) {
+	if (res = avctx->internal->execute(avctx, do_filter, &td, NULL, FFMIN(outlink->h, nb_threads))) {
 		return res;
 	}
 
@@ -229,5 +238,6 @@ AVFilter ff_vf_qnfilter = {
 	.query_formats = query_formats,
 	.inputs = avfilter_vf_qnfilter_inputs,
 	.outputs = avfilter_vf_qnfilter_outputs,
+	.flags = AVFILTER_FLAG_SLICE_THREADS | AVFILTER_FLAG_SUPPORT_TIMELINE_GENERIC,
 };
 

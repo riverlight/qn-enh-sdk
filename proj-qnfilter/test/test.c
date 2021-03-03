@@ -1,5 +1,6 @@
 #include <stdio.h>
 #include <stdlib.h>
+#include <time.h>
 
 #include "../include/qnfilter-sdk.h"
 
@@ -21,14 +22,17 @@ int main(int argc, char* argv[])
 	}
 	fread(pI420, 1, 63, pf);
 	int count = 0;
+	clock_t t1 = clock();
 	while (1) {
 		fread(pI420, 1, 6, pf);
 		fread(pI420, 1, 1280 * 720 * 3 / 2, pf);
 		QNFilter_Process_I420(handle, pI420, 720, 1280);
 		count++;
-		if (count == 10)
+		if (count == 100)
 			break;
 	}
+	clock_t t2 = clock();
+	printf("time : %lld\n", t2 - t1);
 	fclose(pf);
 	
 	QNFilter_Destroy(handle);
