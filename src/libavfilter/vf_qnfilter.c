@@ -16,8 +16,7 @@ typedef struct QNFilterContext {
 
 	const char* enh_type;
 	QNFILTER_TYPE e_enh_type;
-	double lowlight_w;
-	double dehaze_w;
+	float w;
 	Handle qnfilterHandle;
 	unsigned char* i420buffer;
 
@@ -148,6 +147,14 @@ static av_cold int config_output(AVFilterLink *outlink)
 		return AVERROR(EINVAL);
 	}
 
+	if (qnCtx->w > 0.1) {
+		QNFilterSetting setting = {
+		.dW = qnCtx->w,
+		};
+		av_log(NULL, AV_LOG_INFO, "qnfilter w : %f\n", setting.dW);
+		QNFilter_Setting(qnCtx->qnfilterHandle, &setting);
+	}
+
 	qnCtx->i420buffer = (unsigned char*)malloc(outlink->w*outlink->h*3/2);
 	if (qnCtx->i420buffer == NULL) {
 		av_log(qnCtx, AV_LOG_ERROR, "malloc i420buffer fail\n");
@@ -196,8 +203,7 @@ static int query_formats(AVFilterContext* ctx)
 
 static const AVOption qnfilter_options[] = {
 	{ "enhtype",         "enhance type: lowlight_enh, deblock, dehaze",          OFFSET(enh_type), AV_OPT_TYPE_STRING, {.str = ""}, .flags = VE},
-	{ "lowlight_w",				 "w: float, [0.0, 1.0]",						 OFFSET(lowlight_w), AV_OPT_TYPE_FLOAT, {.dbl = 0.5}, 0.0f, 1.0f, VE  },
-	{ "dehaze_w",				 "w: float, [0.0, 1.0]",						 OFFSET(dehaze_w), AV_OPT_TYPE_FLOAT, {.dbl = 0.95}, 0.0f, 1.0f, VE  },
+	{ "w",				 "w: float, [0.0, 1.0]",						 OFFSET(w), AV_OPT_TYPE_FLOAT, {.dbl = 0.0f}, 0.0f, 1.0f, VE  },
 	{ NULL }
 
 };// TODO: add something if needed

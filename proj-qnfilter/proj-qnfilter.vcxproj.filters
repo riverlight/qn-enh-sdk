@@ -27,6 +27,9 @@
     <ClInclude Include="src\qnfilter.h">
       <Filter>头文件</Filter>
     </ClInclude>
+    <ClInclude Include="test\test2.h">
+      <Filter>test</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="src\qnfilter-sdk.cpp">
@@ -37,6 +40,9 @@
     </ClCompile>
     <ClCompile Include="src\qnfilter.cpp">
       <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="test\test2.cpp">
+      <Filter>test</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

@@ -3,11 +3,12 @@
 #include <time.h>
 
 #include "../include/qnfilter-sdk.h"
-
+#include "test2.h"
 
 int main(int argc, char* argv[])
 {
 	printf("Hi, this is qnfilter-sdk test program!\n");
+	test2();
 
 	Handle handle;
 	QNFILTER_TYPE type = QF_LOWLIGHT;

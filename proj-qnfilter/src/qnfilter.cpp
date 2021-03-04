@@ -15,17 +15,29 @@ CQNFilter::CQNFilter(QNFILTER_TYPE eType)
 {
 	_eType = eType;
 
-	// lowlight
-	_nLowLight_r = 27;
-	_dLowLight_eps = 0.001;
-	_dLowLight_w = 0.5;
-	_dLowLight_maxV1 = 0.7;
-
-	// dehaze
-	_nDehaze_r = 27;
-	_dDehaze_eps = 0.001;
-	_dDehaze_w = 0.95;
-	_dDehaze_maxV1 = 0.8;
+	switch (eType)
+	{
+	case QF_LOWLIGHT:
+		_nDehaze_erode_r = 3;
+		_nDehaze_R = 81;
+		_dDehaze_eps = 0.001;
+		_dDehaze_w = 0.5;
+		_dDehaze_maxV1 = 0.7;
+		break;
+	case QF_DEHAZE:
+		_nDehaze_erode_r = 3;
+		_nDehaze_R = 81;
+		_dDehaze_eps = 0.001;
+		_dDehaze_w = 0.6;
+		_dDehaze_maxV1 = 0.8;
+		break;
+	default:
+		_nDehaze_erode_r = 3;
+		_nDehaze_R = 81;
+		_dDehaze_eps = 0.001;
+		_dDehaze_w = 0.6;
+		_dDehaze_maxV1 = 0.8;
+	}
 }
 
 int CQNFilter::Setting(QNFilterSetting* pSetting)
@@ -33,8 +45,7 @@ int CQNFilter::Setting(QNFilterSetting* pSetting)
 	if (!pSetting)
 		return -1;
 
-	_dLowLight_w = pSetting->dLowlight_w;
-	_dDehaze_w = pSetting->dDehaze_w;
+	_dDehaze_w = pSetting->dW;
 
 	return 0;
 }
@@ -83,11 +94,12 @@ int CQNFilter::Process_I420_dehaze(unsigned char* pI420, int nWidth, int nHeight
 
 int CQNFilter::Filter_lowlight(Mat& m)
 {
+//	Mat mm = m.clone();
 	image_convert(m);
 	Filter_dehaze(m);
 	image_convert(m);
 //	imshow("1", m);
-//	waitKey(0);
+//	waitKey(1);
 	return 0;
 }
 
@@ -147,8 +159,7 @@ void CQNFilter::dehaze_getV1(int& A, Mat& V1, Mat&m, int r, float eps, float w, 
 			imgDark.at<uchar>(i, j) = LMin_xyz(m.at<Vec3b>(i, j)[0], m.at<Vec3b>(i, j)[1], m.at<Vec3b>(i, j)[2]);
 
 	Mat p;
-	int erode_r = 5;
-	Mat element = getStructuringElement(MORPH_RECT, Size(erode_r*2+1, erode_r*2+1), Point(erode_r, erode_r));
+	Mat element = getStructuringElement(MORPH_RECT, Size(_nDehaze_erode_r*2+1, _nDehaze_erode_r *2+1), Point(_nDehaze_erode_r, _nDehaze_erode_r));
 	erode(imgDark, p, element);
 
 	guidedFilter_int(V1, imgDark, p, r, eps);
@@ -190,24 +201,25 @@ int CQNFilter::Filter_dehaze(Mat& m)
 {
 	int A = 0;
 	Mat V1 = Mat(m.size(), CV_8UC1);
-	dehaze_getV1(A, V1, m, _nLowLight_r, _dLowLight_eps, _dLowLight_w, _dLowLight_maxV1);
+	dehaze_getV1(A, V1, m, _nDehaze_R, _dDehaze_eps, _dDehaze_w, _dDehaze_maxV1);
 
 	double A_64f = double(A) / 1.0;
 	for (int i = 0; i < m.rows; i++)
 		for (int j = 0; j < m.cols; j++) {
+			double f = (1.0 - double(V1.at<uchar>(i, j)) / A_64f);
 			int b = LMax(m.at<Vec3b>(i, j)[0] - V1.at<uchar>(i, j), 0);
 			int g = LMax(m.at<Vec3b>(i, j)[1] - V1.at<uchar>(i, j), 0);
 			int r = LMax(m.at<Vec3b>(i, j)[2] - V1.at<uchar>(i, j), 0);
-			m.at<Vec3b>(i, j)[0] = (double(b) / (1.0 - double(V1.at<uchar>(i, j)) / A_64f));
-			m.at<Vec3b>(i, j)[1] = (double(g) / (1.0 - double(V1.at<uchar>(i, j)) / A_64f));
-			m.at<Vec3b>(i, j)[2] = (double(r) / (1.0 - double(V1.at<uchar>(i, j)) / A_64f));
+			m.at<Vec3b>(i, j)[0] = LMin(double(b) / f, 255);
+			m.at<Vec3b>(i, j)[1] = LMin(double(g) / f, 255);
+			m.at<Vec3b>(i, j)[2] = LMin(double(r) / f, 255);
 		}
 
 #if 0
-	imshow("m64", m_64f);
+	imshow("v1", V1);
 	imshow("m", m);
-	waitKey(0);
-	exit(0);
+	waitKey(1);
+	//exit(0);
 #endif 
 
 	return 0;

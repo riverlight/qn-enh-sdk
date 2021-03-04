@@ -30,14 +30,8 @@ private:
 	void guidedFilter_int(Mat& out, cv::Mat I, cv::Mat p, int r, double eps);
 
 private:
-	// lowlight param
-	int _nLowLight_r;
-	double _dLowLight_eps;
-	double _dLowLight_w;
-	double _dLowLight_maxV1;
-
-	// dehaze param
-	int _nDehaze_r;
+	int _nDehaze_erode_r;
+	int _nDehaze_R;
 	double _dDehaze_eps;
 	double _dDehaze_w;
 	double _dDehaze_maxV1;
