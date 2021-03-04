@@ -2,6 +2,7 @@
 #include <opencv2/imgproc/imgproc.hpp>
 #include <iostream>
 
+#include "utils-mt.h"
 #include "qnfilter.h"
 
 using namespace cv;
@@ -73,10 +74,11 @@ int CQNFilter::Process_I420(unsigned char* pI420, int nWidth, int nHeight)
 int CQNFilter::Process_I420_lowlight(unsigned char* pI420, int nWidth, int nHeight)
 {
 	Mat m = Mat(nHeight + nHeight / 2, nWidth, CV_8UC1, pI420);
-	cvtColor(m, m, COLOR_YUV2BGR_I420);
-	Filter_lowlight(m);
-	cvtColor(m, m, COLOR_BGR2YUV_I420);
-	memcpy(pI420, m.data, nWidth * nHeight * 3 / 2);
+	Mat tm = Mat(nHeight, nWidth, CV_8UC3);
+	cvtColor(m, tm, COLOR_YUV2BGR_I420);
+	Filter_lowlight(tm);
+	cvtColor(tm, m, COLOR_BGR2YUV_I420);
+	//memcpy(pI420, m.data, nWidth * nHeight * 3 / 2);
 
 	return 0;
 }
@@ -84,10 +86,11 @@ int CQNFilter::Process_I420_lowlight(unsigned char* pI420, int nWidth, int nHeig
 int CQNFilter::Process_I420_dehaze(unsigned char* pI420, int nWidth, int nHeight)
 {
 	Mat m = Mat(nHeight + nHeight / 2, nWidth, CV_8UC1, pI420);
-	cvtColor(m, m, COLOR_YUV2BGR_I420);
-	Filter_dehaze(m);
-	cvtColor(m, m, COLOR_BGR2YUV_I420);
-	memcpy(pI420, m.data, nWidth * nHeight * 3 / 2);
+	Mat tm = Mat(nHeight, nWidth, CV_8UC3);
+	cvtColor(m, tm, COLOR_YUV2BGR_I420);
+	Filter_dehaze(tm);
+	cvtColor(tm, m, COLOR_BGR2YUV_I420);
+	//memcpy(pI420, m.data, nWidth * nHeight * 3 / 2);
 
 	return 0;
 }
@@ -162,7 +165,17 @@ void CQNFilter::dehaze_getV1(int& A, Mat& V1, Mat&m, int r, float eps, float w, 
 	Mat element = getStructuringElement(MORPH_RECT, Size(_nDehaze_erode_r*2+1, _nDehaze_erode_r *2+1), Point(_nDehaze_erode_r, _nDehaze_erode_r));
 	erode(imgDark, p, element);
 
+#if 1
+	guidedFilter_mt(V1, imgDark, p, r, eps);
+#else
+	Mat v1_ref;
+	v1_ref = V1.clone();
 	guidedFilter_int(V1, imgDark, p, r, eps);
+	guidedFilter_mt(v1_ref, imgDark, p, r, eps);
+	double d0, d1;
+	minMaxIdx(v1_ref - V1, &d0, &d1);
+	cout << d0 << " " << d1 << endl;
+#endif
 	
 	int maxV1_i = maxV1 * 255;
 	for (int i = 0; i < m.rows; i++)
@@ -171,6 +184,14 @@ void CQNFilter::dehaze_getV1(int& A, Mat& V1, Mat&m, int r, float eps, float w, 
 		}
 
 	// ¼ÆËã A
+#if 0
+	Mat m_gray;
+	cvtColor(m, m_gray, COLOR_BGR2GRAY);
+	double dmax, dmin;
+	cv::minMaxIdx(m_gray, &dmin, &dmax);
+	A = dmax;
+	//cout << "dmax : " << A << endl;
+#else
 	int histSize = 256;
 	float range[] = { 0,256 };
 	const float* histRanges = { range };
@@ -195,6 +216,8 @@ void CQNFilter::dehaze_getV1(int& A, Mat& V1, Mat&m, int r, float eps, float w, 
 			if (imgDark.at<uchar>(i, j) >= lmax)
 				A = m_gray.at<uchar>(i, j) > A ? m_gray.at<uchar>(i, j) : A;
 		}
+	//cout << "dmax : " << A << endl;
+#endif
 }
 
 int CQNFilter::Filter_dehaze(Mat& m)

@@ -8,7 +8,7 @@
 int main(int argc, char* argv[])
 {
 	printf("Hi, this is qnfilter-sdk test program!\n");
-	test2();
+	//test2();
 
 	Handle handle;
 	QNFILTER_TYPE type = QF_LOWLIGHT;

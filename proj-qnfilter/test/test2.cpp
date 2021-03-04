@@ -16,14 +16,14 @@ using namespace cv;
 void test2()
 {
 	Handle handle;
-	QNFILTER_TYPE type = QF_LOWLIGHT;
+	QNFILTER_TYPE type = QF_DEHAZE;
 	QNFilter_Create(&handle, type);
 	QNFilterSetting setting = {
 		.dW = 0.6,
 	};
 	QNFilter_Setting(handle, &setting);
 
-	VideoCapture cap("d:/workroom/testroom/xgm.mp4");
+	VideoCapture cap("d:/workroom/testroom/48.mp4");
 	while (1) {
 		Mat frame;
 		cap >> frame;
