@@ -15,8 +15,7 @@ typedef enum QNFILTER_TYPE_e {
 } QNFILTER_TYPE;
 
 typedef struct QNFilterSetting_s {
-	double dLowlight_w;
-	double dDehaze_w;
+	double dW; // dehaze & lowlight W
 } QNFilterSetting;
 
 int QNFilter_Create(Handle* pHandle, QNFILTER_TYPE type);

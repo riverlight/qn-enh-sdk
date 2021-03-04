@@ -120,6 +120,7 @@
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>_CRT_SECURE_NO_WARNINGS;_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
+      <LanguageStandard>stdcpplatest</LanguageStandard>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -135,6 +136,7 @@
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>_CRT_SECURE_NO_WARNINGS;NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
+      <LanguageStandard>stdcpplatest</LanguageStandard>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -148,11 +150,13 @@
     <ClInclude Include="include\qnfilter-basedef.h" />
     <ClInclude Include="include\qnfilter-sdk.h" />
     <ClInclude Include="src\qnfilter.h" />
+    <ClInclude Include="test\test2.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="src\qnfilter-sdk.cpp" />
     <ClCompile Include="src\qnfilter.cpp" />
     <ClCompile Include="test\test.c" />
+    <ClCompile Include="test\test2.cpp" />
   </ItemGroup>
   <ItemGroup>
     <Text Include="CMakeLists.txt" />
