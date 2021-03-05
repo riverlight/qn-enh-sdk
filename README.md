@@ -34,4 +34,5 @@ ffmpeg -i fei.mp4 -vf qnfilter=enhtype=lowlight_enh:w=0.9 -t 300 -acodec copy -y
 ## 效果展示
 *lowlight_enh 应该实用性还不错，可以比较显著的增大对比度改善视觉评价*
 
+> ./demo 中有两个视频，xgm-low.mp4 是视频增强后的效果-
 
