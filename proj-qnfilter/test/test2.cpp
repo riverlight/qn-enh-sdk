@@ -38,10 +38,12 @@ void test2()
 		cvtColor(out, out, COLOR_YUV2BGR_I420);
 		imshow("1", out);
 		waitKey(1);
+		cout << cap.get(CAP_PROP_POS_MSEC) << endl;
 	}
 
 
 	QNFilter_Destroy(handle);
+	cout << "test2 done..\n";
 	exit(0);
 }
 #else
