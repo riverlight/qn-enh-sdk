@@ -5,6 +5,10 @@
 
 using namespace std;
 
+#define LMin(x, y) ((x)<(y) ? (x) : (y))
+#define LMin_xyz(x, y, z) LMin((x), LMin((y), (z)))
+#define LMax(x, y) ((x)>(y) ? (x) : (y))
+#define LClip(a, lo, hi) ((a)<lo ? lo : ((a)>hi ? hi : (a)) )
 
 static void thread_mat_mul(Mat *d, Mat* s0, Mat* s1)
 {
@@ -91,4 +95,94 @@ void CQNFilter::guidedFilter_mt(Mat& out, cv::Mat I, cv::Mat p, int r, double ep
 	_ImeanA = _mean_a.mul(_I_32);
 	_gf_out_32 = _ImeanA + _mean_b;
 	_gf_out_32.convertTo(out, CV_8UC1);
+}
+
+static void image_convert_slice(Mat* img, int start_rows, int end_rows)
+{
+	for (int i = start_rows; i < end_rows; i++)
+		for (int j = 0; j < img->cols; j++)
+		{
+			unsigned char* p = (uchar*)(&img->at<Vec3b>(i, j));
+			p[0] = 255 - p[0];
+			p[1] = 255 - p[1];
+			p[2] = 255 - p[2];
+//			img->at<Vec3b>(i, j)[0] = 255 - img->at<Vec3b>(i, j)[0];
+//			img->at<Vec3b>(i, j)[1] = 255 - img->at<Vec3b>(i, j)[1];
+//			img->at<Vec3b>(i, j)[2] = 255 - img->at<Vec3b>(i, j)[2];
+		}
+}
+
+void CQNFilter::image_convert_mt(Mat& m)
+{
+	const int thd_num = 6;
+	thread *t[thd_num];
+	for (int i = 0; i < thd_num; i++) {
+		t[i] = new thread(image_convert_slice, &m, i * m.rows / thd_num, (i + 1) * m.rows / thd_num);
+	}
+	for (int i = 0; i < thd_num; i++)
+		t[i]->join();
+	for (int i = 0; i < thd_num; i++)
+		delete t[i];
+}
+
+static void get_darkchannel_slice(Mat* img, Mat* imgDark, int start_rows, int end_rows)
+{
+	for (int i = start_rows; i < end_rows; i++)
+		for (int j = 0; j < img->cols; j++)
+		{
+			unsigned char* p = (uchar*)(&img->at<Vec3b>(i, j));
+			imgDark->at<uchar>(i, j) = LMin_xyz(p[0], p[1], p[2]);
+		}
+}
+
+void CQNFilter::get_darkchannel_mt(Mat& m, Mat& imgDark)
+{
+	const int thd_num = 6;
+	thread* t[thd_num];
+	for (int i = 0; i < thd_num; i++) {
+		t[i] = new thread(get_darkchannel_slice, &m, &imgDark, i * m.rows / thd_num, (i + 1) * m.rows / thd_num);
+	}
+	for (int i = 0; i < thd_num; i++)
+		t[i]->join();
+	for (int i = 0; i < thd_num; i++)
+		delete t[i];
+}
+
+static void stretch_image_slice(Mat* m, Mat* V1, int A, int start_rows, int end_rows)
+{
+	double A_64f = double(A) / 1.0;
+	for (int i = start_rows; i < end_rows; i++)
+	{
+		unsigned char* p = (uchar*)(&m->at<Vec3b>(i, 0));
+		unsigned char *pv = &V1->at<uchar>(i, 0);
+		for (int j = 0; j < m->cols; j++) {
+			unsigned char v = *pv++;
+			double f = (1.0 - double(v) / A_64f);
+#if 0
+			double b = double(p[0] - v) / f;
+			double g = double(p[1] - v) / f;
+			double r = double(p[2] - v) / f;
+			p[0] = LClip(b, 0, 255);
+			p[1] = LClip(g, 0, 255);
+			p[2] = LClip(r, 0, 255);
+#endif
+			p[0] = LMin(double(LMax(p[0] - v, 0)) / f, 255);
+			p[1] = LMin(double(LMax(p[1] - v, 0)) / f, 255);
+			p[2] = LMin(double(LMax(p[2] - v, 0)) / f, 255);
+			p += 3;
+		}
+	}
+}
+
+void CQNFilter::stretch_image_mt(Mat& m, Mat& V1, int A)
+{
+	const int thd_num = 8;
+	thread* t[thd_num];
+	for (int i = 0; i < thd_num; i++) {
+		t[i] = new thread(stretch_image_slice, &m, &V1, A, i * m.rows / thd_num, (i + 1) * m.rows / thd_num);
+	}
+	for (int i = 0; i < thd_num; i++)
+		t[i]->join();
+	for (int i = 0; i < thd_num; i++)
+		delete t[i];
 }

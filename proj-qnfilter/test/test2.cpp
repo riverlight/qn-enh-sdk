@@ -16,7 +16,7 @@ using namespace cv;
 void test2()
 {
 	Handle handle;
-	QNFILTER_TYPE type = QF_DEHAZE;
+	QNFILTER_TYPE type = QF_LOWLIGHT;
 	QNFilter_Create(&handle, type);
 	QNFilterSetting setting = {
 		.dW = 0.6,

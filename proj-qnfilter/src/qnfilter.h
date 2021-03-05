@@ -27,8 +27,15 @@ private:
 
 	void dehaze_getV1(int &A, Mat &V1_64f, Mat &m, int r, float eps, float w, float maxV1);
 	void image_convert(Mat& m);
+	void get_darkchannel(Mat& m, Mat &imgDark);
 	void guidedFilter_int(Mat& out, cv::Mat I, cv::Mat p, int r, double eps);
+	void stretch_image(Mat& m, Mat& V1, int A);
+	void calc_A_smp(Mat& m_gray, int& A);
+
+	void image_convert_mt(Mat& m);
 	void guidedFilter_mt(Mat& out, cv::Mat I, cv::Mat p, int r, double eps);
+	void get_darkchannel_mt(Mat& m, Mat& imgDark);
+	void stretch_image_mt(Mat& m, Mat& V1, int A);
 
 private:
 	int _nDehaze_erode_r;
