@@ -1,7 +1,9 @@
+#include <thread>
 #include <opencv2/highgui/highgui.hpp>    
 #include <opencv2/imgproc/imgproc.hpp>
 #include <iostream>
 
+#include "utils-mt.h"
 #include "qnfilter.h"
 
 using namespace cv;
@@ -73,10 +75,11 @@ int CQNFilter::Process_I420(unsigned char* pI420, int nWidth, int nHeight)
 int CQNFilter::Process_I420_lowlight(unsigned char* pI420, int nWidth, int nHeight)
 {
 	Mat m = Mat(nHeight + nHeight / 2, nWidth, CV_8UC1, pI420);
-	cvtColor(m, m, COLOR_YUV2BGR_I420);
-	Filter_lowlight(m);
-	cvtColor(m, m, COLOR_BGR2YUV_I420);
-	memcpy(pI420, m.data, nWidth * nHeight * 3 / 2);
+	MAT_INIT(_tm, m, CV_8UC3);
+	cvtColor(m, _tm, COLOR_YUV2BGR_I420);
+	Filter_lowlight(_tm);
+	cvtColor(_tm, m, COLOR_BGR2YUV_I420);
+	//memcpy(pI420, m.data, nWidth * nHeight * 3 / 2);
 
 	return 0;
 }
@@ -84,10 +87,10 @@ int CQNFilter::Process_I420_lowlight(unsigned char* pI420, int nWidth, int nHeig
 int CQNFilter::Process_I420_dehaze(unsigned char* pI420, int nWidth, int nHeight)
 {
 	Mat m = Mat(nHeight + nHeight / 2, nWidth, CV_8UC1, pI420);
-	cvtColor(m, m, COLOR_YUV2BGR_I420);
-	Filter_dehaze(m);
-	cvtColor(m, m, COLOR_BGR2YUV_I420);
-	memcpy(pI420, m.data, nWidth * nHeight * 3 / 2);
+	MAT_INIT(_tm, m, CV_8UC3);
+	cvtColor(m, _tm, COLOR_YUV2BGR_I420);
+	Filter_dehaze(_tm);
+	cvtColor(_tm, m, COLOR_BGR2YUV_I420);
 
 	return 0;
 }
@@ -95,9 +98,9 @@ int CQNFilter::Process_I420_dehaze(unsigned char* pI420, int nWidth, int nHeight
 int CQNFilter::Filter_lowlight(Mat& m)
 {
 //	Mat mm = m.clone();
-	image_convert(m);
+	image_convert_mt(m);
 	Filter_dehaze(m);
-	image_convert(m);
+	image_convert_mt(m);
 //	imshow("1", m);
 //	waitKey(1);
 	return 0;
@@ -150,19 +153,32 @@ void CQNFilter::guidedFilter_int(Mat& out, cv::Mat I, cv::Mat p, int r, double e
 	out_32.convertTo(out, CV_8UC1);
 }
 
+void CQNFilter::get_darkchannel(Mat& m, Mat& imgDark)
+{
+	for (int i = 0; i < m.rows; i++)
+		for (int j = 0; j < m.cols; j++)
+			imgDark.at<uchar>(i, j) = LMin_xyz(m.at<Vec3b>(i, j)[0], m.at<Vec3b>(i, j)[1], m.at<Vec3b>(i, j)[2]);
+}
+
+void CQNFilter::calc_A_smp(Mat& m_gray, int& A)
+{
+	double dmax, dmin;
+	cv::minMaxIdx(m_gray, &dmin, &dmax);
+	A = dmax;
+}
+
 void CQNFilter::dehaze_getV1(int& A, Mat& V1, Mat&m, int r, float eps, float w, float maxV1)
 {
 	// get dark-channel
-	Mat imgDark = Mat(V1.size(), CV_8UC1);
-	for ( int i=0; i<m.rows; i++ )
-		for (int j = 0; j < m.cols; j++)
-			imgDark.at<uchar>(i, j) = LMin_xyz(m.at<Vec3b>(i, j)[0], m.at<Vec3b>(i, j)[1], m.at<Vec3b>(i, j)[2]);
+	MAT_INIT(_imgDark, V1, CV_8UC1);
+	get_darkchannel_mt(m, _imgDark);
 
-	Mat p;
+	//Mat p;
+	MAT_INIT(_imgP, m, CV_8UC1);
 	Mat element = getStructuringElement(MORPH_RECT, Size(_nDehaze_erode_r*2+1, _nDehaze_erode_r *2+1), Point(_nDehaze_erode_r, _nDehaze_erode_r));
-	erode(imgDark, p, element);
+	erode(_imgDark, _imgP, element);
 
-	guidedFilter_int(V1, imgDark, p, r, eps);
+	guidedFilter_mt(V1, _imgDark, _imgP, r, eps);
 	
 	int maxV1_i = maxV1 * 255;
 	for (int i = 0; i < m.rows; i++)
@@ -171,11 +187,16 @@ void CQNFilter::dehaze_getV1(int& A, Mat& V1, Mat&m, int r, float eps, float w, 
 		}
 
 	// ¼ÆËã A
+#if 0
+	cvtColor(m, _m_gray, COLOR_BGR2GRAY);
+	calc_A_smp(_m_gray, A);
+	//cout << "dmax : " << A << endl;
+#else
 	int histSize = 256;
 	float range[] = { 0,256 };
 	const float* histRanges = { range };
 	Mat dark_hist;
-	calcHist(&imgDark, 1, 0, Mat(), dark_hist, 1, &histSize, &histRanges, true, false);
+	calcHist(&_imgDark, 1, 0, Mat(), dark_hist, 1, &histSize, &histRanges, true, false);
 	Mat hist_cumsum = Mat(dark_hist.size(), dark_hist.type());
 	hist_cumsum.at<float>(0) = dark_hist.at<float>(0);
 	for (int i = 1; i < 256; i++)
@@ -186,23 +207,20 @@ void CQNFilter::dehaze_getV1(int& A, Mat& V1, Mat&m, int r, float eps, float w, 
 			break;
 		}
 	}
-	Mat m_gray;
-	cvtColor(m, m_gray, COLOR_BGR2GRAY);
+	cvtColor(m, _m_gray, COLOR_BGR2GRAY);
 	
 	A = 0;
 	for (int i = 0; i < m.rows; i++)
 		for (int j = 0; j < m.cols; j++) {
-			if (imgDark.at<uchar>(i, j) >= lmax)
-				A = m_gray.at<uchar>(i, j) > A ? m_gray.at<uchar>(i, j) : A;
+			if (_imgDark.at<uchar>(i, j) >= lmax)
+				A = _m_gray.at<uchar>(i, j) > A ? _m_gray.at<uchar>(i, j) : A;
 		}
+	//cout << "dmax : " << A << endl;
+#endif
 }
 
-int CQNFilter::Filter_dehaze(Mat& m)
+void CQNFilter::stretch_image(Mat& m, Mat& V1, int A)
 {
-	int A = 0;
-	Mat V1 = Mat(m.size(), CV_8UC1);
-	dehaze_getV1(A, V1, m, _nDehaze_R, _dDehaze_eps, _dDehaze_w, _dDehaze_maxV1);
-
 	double A_64f = double(A) / 1.0;
 	for (int i = 0; i < m.rows; i++)
 		for (int j = 0; j < m.cols; j++) {
@@ -214,6 +232,15 @@ int CQNFilter::Filter_dehaze(Mat& m)
 			m.at<Vec3b>(i, j)[1] = LMin(double(g) / f, 255);
 			m.at<Vec3b>(i, j)[2] = LMin(double(r) / f, 255);
 		}
+}
+
+int CQNFilter::Filter_dehaze(Mat& m)
+{
+	int A = 0;
+	MAT_INIT(_V1, m, CV_8UC1);
+	dehaze_getV1(A, _V1, m, _nDehaze_R, _dDehaze_eps, _dDehaze_w, _dDehaze_maxV1);
+
+	stretch_image_mt(m, _V1, A);
 
 #if 0
 	imshow("v1", V1);

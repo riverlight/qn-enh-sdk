@@ -23,7 +23,7 @@ void test2()
 	};
 	QNFilter_Setting(handle, &setting);
 
-	VideoCapture cap("d:/workroom/testroom/xgm.mp4");
+	VideoCapture cap("d:/workroom/testroom/48.mp4");
 	while (1) {
 		Mat frame;
 		cap >> frame;
@@ -38,10 +38,12 @@ void test2()
 		cvtColor(out, out, COLOR_YUV2BGR_I420);
 		imshow("1", out);
 		waitKey(1);
+		cout << cap.get(CAP_PROP_POS_MSEC) << endl;
 	}
 
 
 	QNFilter_Destroy(handle);
+	cout << "test2 done..\n";
 	exit(0);
 }
 #else
