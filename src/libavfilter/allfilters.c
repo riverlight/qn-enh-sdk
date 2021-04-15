@@ -338,6 +338,7 @@ extern AVFilter ff_vf_pseudocolor;
 extern AVFilter ff_vf_psnr;
 extern AVFilter ff_vf_pullup;
 extern AVFilter ff_vf_qnfilter;
+extern AVFilter ff_vf_qndeblock;
 extern AVFilter ff_vf_qp;
 extern AVFilter ff_vf_random;
 extern AVFilter ff_vf_readeia608;
