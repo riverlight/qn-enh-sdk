@@ -355,6 +355,7 @@ OBJS-$(CONFIG_PSEUDOCOLOR_FILTER)            += vf_pseudocolor.o
 OBJS-$(CONFIG_PSNR_FILTER)                   += vf_psnr.o framesync.o
 OBJS-$(CONFIG_PULLUP_FILTER)                 += vf_pullup.o
 OBJS-$(CONFIG_QNFILTER_FILTER) 				 += vf_qnfilter.o
+OBJS-$(CONFIG_QNDEBLOCK_FILTER)              += vf_qndeblock.o
 OBJS-$(CONFIG_QP_FILTER)                     += vf_qp.o
 OBJS-$(CONFIG_RANDOM_FILTER)                 += vf_random.o
 OBJS-$(CONFIG_READEIA608_FILTER)             += vf_readeia608.o

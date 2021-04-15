@@ -7,6 +7,8 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "proj-qnfilter", "proj-qnfil
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "qn-enh-sdk", "..\vcproj\qn-enh-sdk.vcxproj", "{47FB8592-E225-4AAD-9E4C-F88BB79B63C1}"
 EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "proj-qndeblock-filter", "..\proj-qndeblock-filter\proj-qndeblock-filter.vcxproj", "{E81A851F-C346-4BB3-A2A1-DDB417F7F183}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|x64 = Debug|x64
@@ -31,6 +33,14 @@ Global
 		{47FB8592-E225-4AAD-9E4C-F88BB79B63C1}.Release|x64.Build.0 = Release|x64
 		{47FB8592-E225-4AAD-9E4C-F88BB79B63C1}.Release|x86.ActiveCfg = Release|Win32
 		{47FB8592-E225-4AAD-9E4C-F88BB79B63C1}.Release|x86.Build.0 = Release|Win32
+		{E81A851F-C346-4BB3-A2A1-DDB417F7F183}.Debug|x64.ActiveCfg = Debug|x64
+		{E81A851F-C346-4BB3-A2A1-DDB417F7F183}.Debug|x64.Build.0 = Debug|x64
+		{E81A851F-C346-4BB3-A2A1-DDB417F7F183}.Debug|x86.ActiveCfg = Debug|Win32
+		{E81A851F-C346-4BB3-A2A1-DDB417F7F183}.Debug|x86.Build.0 = Debug|Win32
+		{E81A851F-C346-4BB3-A2A1-DDB417F7F183}.Release|x64.ActiveCfg = Release|x64
+		{E81A851F-C346-4BB3-A2A1-DDB417F7F183}.Release|x64.Build.0 = Release|x64
+		{E81A851F-C346-4BB3-A2A1-DDB417F7F183}.Release|x86.ActiveCfg = Release|Win32
+		{E81A851F-C346-4BB3-A2A1-DDB417F7F183}.Release|x86.Build.0 = Release|Win32
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
