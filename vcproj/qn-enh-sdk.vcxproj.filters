@@ -23,7 +23,7 @@
     <ClCompile Include="..\src\libavfilter\vf_qnfilter.c">
       <Filter>libavfilter</Filter>
     </ClCompile>
-    <ClCompile Include="..\src\libavfilter\vf_qndeblock_filter.c">
+    <ClCompile Include="..\src\libavfilter\vf_qndeblock.c">
       <Filter>libavfilter</Filter>
     </ClCompile>
   </ItemGroup>
