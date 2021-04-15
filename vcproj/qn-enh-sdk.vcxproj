@@ -142,7 +142,7 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="..\src\libavfilter\allfilters.c" />
-    <ClCompile Include="..\src\libavfilter\vf_qndeblock_filter.c" />
+    <ClCompile Include="..\src\libavfilter\vf_qndeblock.c" />
     <ClCompile Include="..\src\libavfilter\vf_qnfilter.c">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
       </ExcludedFromBuild>
