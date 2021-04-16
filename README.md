@@ -29,6 +29,8 @@ sample 如下：
 ```
 ffmpeg -i fei.mp4 -vf qnfilter=enhtype=lowlight_enh:w=0.9 -t 300 -acodec copy -y -vcodec h264 fei-light.mp4
 ffmpeg-h -i 48.mp4 -vf qndeblock=modelurl="../../nir10_best.onnx" -vcodec h264 a.mp4
+可以混合使用：
+ffmpeg -i fei.mp4 -vcodec h264 -vf qnfilter=enhtype=lowlight_enh:w=0.9,qndeblock=modelurl="../../nir10_best.onnx" fei-f.mp4
 ```
 
 ## filter 参数说明
