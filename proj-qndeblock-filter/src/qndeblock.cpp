@@ -107,12 +107,10 @@ int CQNDeblock::Process_I420(unsigned char* pI420)
 	cudaMemcpy(_pOutput, _buffers[_outputIndex], outputSize * sizeof(float), cudaMemcpyDeviceToHost);
 	Buffer_2_Mat2(_pOutput, _tm);
 
-	imshow("1", _tm);
-	waitKey(1);
+	//imshow("1", _tm);
+	//waitKey(1);
 
-	//Filter_lowlight(_tm);
 	cvtColor(_tm, m, COLOR_BGR2YUV_I420);
-	
 
 	return 0;
 }
