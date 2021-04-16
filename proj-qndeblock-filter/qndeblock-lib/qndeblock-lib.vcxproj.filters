@@ -13,39 +13,18 @@
       <UniqueIdentifier>{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}</UniqueIdentifier>
       <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav;mfcribbon-ms</Extensions>
     </Filter>
-    <Filter Include="test">
-      <UniqueIdentifier>{742ded09-e765-462d-a5be-9cc37b23826e}</UniqueIdentifier>
-    </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="test\test2.h">
-      <Filter>test</Filter>
-    </ClInclude>
-    <ClInclude Include="include\qndeblock-sdk.h">
-      <Filter>头文件</Filter>
-    </ClInclude>
-    <ClInclude Include="src\qndeblock.h">
-      <Filter>头文件</Filter>
-    </ClInclude>
-  </ItemGroup>
-  <ItemGroup>
-    <ClCompile Include="test\test.c">
-      <Filter>test</Filter>
-    </ClCompile>
-    <ClCompile Include="test\test2.cpp">
-      <Filter>test</Filter>
-    </ClCompile>
-    <ClCompile Include="src\qndeblock-sdk.cpp">
+    <ClCompile Include="..\src\qndeblock.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
-    <ClCompile Include="src\qndeblock.cpp">
+    <ClCompile Include="..\src\qndeblock-sdk.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <Text Include="CMakeLists.txt" />
-  </ItemGroup>
-  <ItemGroup>
-    <None Include="..\proj-qnfilter\qnfilter-lib\qnfilter-lib.vcxproj" />
+    <ClInclude Include="..\src\qndeblock.h">
+      <Filter>源文件</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>
